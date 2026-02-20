@@ -214,7 +214,22 @@ ok "Dotfiles symlinked"
 
 # ---------- install tmux plugins ----------
 info "Installing tmux plugins..."
-"$HOME/.tmux/plugins/tpm/bin/install_plugins" || warn "Run 'prefix + I' inside tmux to install plugins"
+
+TMUX_PLUGINS_DIR="$HOME/.tmux/plugins"
+declare -A TMUX_PLUGINS=(
+    [tmux-fzf]="https://github.com/sainnhe/tmux-fzf"
+    [tmux]="https://github.com/dracula/tmux"
+)
+
+for plugin in "${!TMUX_PLUGINS[@]}"; do
+    if [ ! -d "$TMUX_PLUGINS_DIR/$plugin" ]; then
+        info "Installing tmux plugin: $plugin"
+        git clone --depth=1 "${TMUX_PLUGINS[$plugin]}" "$TMUX_PLUGINS_DIR/$plugin"
+        ok "$plugin installed"
+    else
+        ok "$plugin already installed"
+    fi
+done
 
 # ---------- set default shell ----------
 if [ "$SHELL" != "$(which zsh)" ]; then
