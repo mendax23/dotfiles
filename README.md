@@ -12,6 +12,15 @@ cd ~/dotfiles
 
 that's it. the install script handles everything — packages, oh-my-zsh, plugins, fonts, nvm, tpm, vscode extensions, and symlinks all the dotfiles into place.
 
+### already have dotfiles?
+
+if you already have a `.zshrc`, `.bashrc`, etc., the default install will stop and tell you which files conflict. you can choose how to handle it:
+
+```bash
+./install.sh --backup     # moves existing files to ~/.dotfiles-backup/<timestamp>, then symlinks
+./install.sh --overwrite  # replaces existing files with these configs (no backup)
+```
+
 ## what's included
 
 | package | files |
@@ -28,15 +37,6 @@ that's it. the install script handles everything — packages, oh-my-zsh, plugin
 stow is just a symlink manager. each folder in this repo (like `zsh/`, `tmux/`) mirrors your home directory structure. when you run stow, it creates symlinks from `~` pointing into this repo.
 
 so `~/.zshrc` is actually a symlink to `~/dotfiles/zsh/.zshrc`. you edit your dotfiles like normal, but they live in the git repo. no copying files back and forth.
-
-### already have dotfiles on the machine?
-
-```bash
-cd ~/dotfiles
-stow --adopt -v --target="$HOME" zsh bash git tmux kitty vscode misc
-```
-
-`--adopt` replaces your existing files with symlinks and pulls the originals into the repo. check `git diff` after to see if anything changed.
 
 ### adding new dotfiles later
 
