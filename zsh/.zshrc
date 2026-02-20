@@ -12,17 +12,6 @@ fi
 export ZSH="$HOME/.oh-my-zsh"
  
 
-# --- fzf (Ubuntu/Pop!_OS) ---
-# # keybindings: Ctrl-R (history), Ctrl-T (files), Alt-C (cd)
-if [[ -r /usr/share/doc/fzf/examples/key-bindings.zsh ]]; then
-  source /usr/share/doc/fzf/examples/key-bindings.zsh
-fi
-#
-#   # completion integration (Tab, plus ** trigger if you want it)
-if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]]; then
-	source /usr/share/doc/fzf/examples/completion.zsh
-fi
-
 # Optional: fuzzy completion trigger
 # export FZF_COMPLETION_TRIGGER='**'
 
@@ -112,6 +101,17 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
+
+# --- fzf (Ubuntu/Pop!_OS) ---
+# # keybindings: Ctrl-R (history), Ctrl-T (files), Alt-C (cd)
+if [[ -r /usr/share/doc/fzf/examples/key-bindings.zsh ]]; then
+  source /usr/share/doc/fzf/examples/key-bindings.zsh
+fi
+#
+#   # completion integration (Tab, plus ** trigger if you want it)
+if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]]; then
+  source /usr/share/doc/fzf/examples/completion.zsh
+fi
 
 # User configuration
 
