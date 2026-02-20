@@ -2,11 +2,69 @@
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+STOW_PACKAGES=(zsh bash git tmux kitty vscode misc)
+MODE="default"
 
 info()  { printf "\033[1;34m[INFO]\033[0m  %s\n" "$1"; }
 ok()    { printf "\033[1;32m[OK]\033[0m    %s\n" "$1"; }
 warn()  { printf "\033[1;33m[WARN]\033[0m  %s\n" "$1"; }
 error() { printf "\033[1;31m[ERROR]\033[0m %s\n" "$1"; }
+
+usage() {
+    echo "Usage: $0 [--backup | --overwrite]"
+    echo ""
+    echo "  (default)     Fail if existing dotfiles conflict with stow"
+    echo "  --backup      Back up existing dotfiles before symlinking"
+    echo "  --overwrite   Overwrite existing dotfiles with these configs"
+    exit 1
+}
+
+# ---------- parse arguments ----------
+for arg in "$@"; do
+    case "$arg" in
+        --backup)    MODE="backup" ;;
+        --overwrite) MODE="overwrite" ;;
+        -h|--help)   usage ;;
+        *)           error "Unknown option: $arg"; usage ;;
+    esac
+done
+
+# ---------- find conflicting files ----------
+find_conflicts() {
+    local conflicts=()
+    for package in "${STOW_PACKAGES[@]}"; do
+        while IFS= read -r -d '' file; do
+            local rel="${file#"$DOTFILES_DIR/$package/"}"
+            local target="$HOME/$rel"
+            if [ -e "$target" ] && [ ! -L "$target" ]; then
+                conflicts+=("$target")
+            fi
+        done < <(find "$DOTFILES_DIR/$package" -type f -print0)
+    done
+    printf '%s\n' "${conflicts[@]}"
+}
+
+# ---------- backup conflicting dotfiles ----------
+backup_dotfiles() {
+    local backup_dir="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+    local conflicts
+    conflicts="$(find_conflicts)"
+
+    if [ -z "$conflicts" ]; then
+        info "No conflicting dotfiles found, nothing to back up"
+        return
+    fi
+
+    info "Backing up existing dotfiles to $backup_dir"
+    mkdir -p "$backup_dir"
+    while IFS= read -r file; do
+        local rel="${file#"$HOME/"}"
+        mkdir -p "$backup_dir/$(dirname "$rel")"
+        mv "$file" "$backup_dir/$rel"
+        info "  Backed up $rel"
+    done <<< "$conflicts"
+    ok "Backup saved to $backup_dir"
+}
 
 # ---------- system packages ----------
 info "Installing system packages..."
@@ -119,11 +177,39 @@ done
 ok "VS Code extensions done"
 
 # ---------- symlink dotfiles with stow ----------
-info "Symlinking dotfiles with stow..."
 cd "$DOTFILES_DIR"
-for package in zsh bash git tmux kitty vscode misc; do
-    stow -v --restow --target="$HOME" "$package"
+
+if [ "$MODE" = "backup" ]; then
+    backup_dotfiles
+elif [ "$MODE" = "overwrite" ]; then
+    info "Overwriting existing dotfiles..."
+elif [ "$MODE" = "default" ]; then
+    conflicts="$(find_conflicts)"
+    if [ -n "$conflicts" ]; then
+        error "Existing dotfiles would conflict with stow:"
+        echo "$conflicts" | while IFS= read -r f; do printf "  %s\n" "$f"; done
+        echo ""
+        info "Re-run with one of:"
+        info "  $0 --backup      Back up existing files, then symlink"
+        info "  $0 --overwrite   Overwrite existing files"
+        exit 1
+    fi
+fi
+
+info "Symlinking dotfiles with stow..."
+for package in "${STOW_PACKAGES[@]}"; do
+    if [ "$MODE" = "overwrite" ]; then
+        stow -v --adopt --target="$HOME" "$package"
+    else
+        stow -v --restow --target="$HOME" "$package"
+    fi
 done
+
+if [ "$MODE" = "overwrite" ]; then
+    info "Restoring repo versions over adopted files..."
+    git -C "$DOTFILES_DIR" checkout -- .
+fi
+
 ok "Dotfiles symlinked"
 
 # ---------- install tmux plugins ----------
