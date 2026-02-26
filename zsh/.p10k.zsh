@@ -975,9 +975,9 @@
   # Context color when running with privileges.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=1
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=0
-  # Context color in SSH without privileges (bright white on red to stand out).
+  # Context color in SSH without privileges (white on dark gray to match SSH badge).
   typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=255
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=1
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=240
   # Default context color (no privileges, no SSH).
   typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=3
   typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=0
@@ -1784,10 +1784,10 @@
 
   # Override dir segment colors when in SSH: orange background instead of blue.
   if [[ -n "$SSH_CONNECTION" ]]; then
-    typeset -g POWERLEVEL9K_DIR_BACKGROUND=208
-    typeset -g POWERLEVEL9K_DIR_FOREGROUND=0
-    typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=238
-    typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=0
+    typeset -g POWERLEVEL9K_DIR_BACKGROUND=93
+    typeset -g POWERLEVEL9K_DIR_FOREGROUND=255
+    typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=183
+    typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=255
   fi
 
   # Transient prompt works similarly to the builtin transient_rprompt option. It trims down prompt
