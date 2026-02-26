@@ -32,6 +32,7 @@
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
+    ssh_indicator           # SSH remote session badge (only visible over SSH)
     # os_icon               # os identifier
     dir                     # current directory
     vcs                     # git status
@@ -974,9 +975,9 @@
   # Context color when running with privileges.
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=1
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_BACKGROUND=0
-  # Context color in SSH without privileges.
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=3
-  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=0
+  # Context color in SSH without privileges (bright white on red to stand out).
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=255
+  typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_BACKGROUND=1
   # Default context color (no privileges, no SSH).
   typeset -g POWERLEVEL9K_CONTEXT_FOREGROUND=3
   typeset -g POWERLEVEL9K_CONTEXT_BACKGROUND=0
@@ -1770,39 +1771,24 @@
   # Custom prefix.
   typeset -g POWERLEVEL9K_TIME_PREFIX='at '
 
-  # Example of a user-defined prompt segment. Function prompt_example will be called on every
-  # prompt if `example` prompt segment is added to POWERLEVEL9K_LEFT_PROMPT_ELEMENTS or
-  # POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS. It displays an icon and yellow text on red background
-  # greeting the user.
-  #
-  # Type `p10k help segment` for documentation and a more sophisticated example.
-  function prompt_example() {
-    p10k segment -b 1 -f 3 -i '⭐' -t 'hello, %n'
+  ##################################[ ssh_indicator: SSH badge ]##################################
+  # Custom segment: shows a bold  SSH badge only when connected via SSH.
+  function prompt_ssh_indicator() {
+    [[ -n "$SSH_CONNECTION" ]] && p10k segment -b 1 -f 255 -i '󰣀' -t 'SSH'
   }
-
-  # User-defined prompt segments may optionally provide an instant_prompt_* function. Its job
-  # is to generate the prompt segment for display in instant prompt. See
-  # https://github.com/romkatv/powerlevel10k#instant-prompt.
-  #
-  # Powerlevel10k will call instant_prompt_* at the same time as the regular prompt_* function
-  # and will record all `p10k segment` calls it makes. When displaying instant prompt, Powerlevel10k
-  # will replay these calls without actually calling instant_prompt_*. It is imperative that
-  # instant_prompt_* always makes the same `p10k segment` calls regardless of environment. If this
-  # rule is not observed, the content of instant prompt will be incorrect.
-  #
-  # Usually, you should either not define instant_prompt_* or simply call prompt_* from it. If
-  # instant_prompt_* is not defined for a segment, the segment won't be shown in instant prompt.
-  function instant_prompt_example() {
-    # Since prompt_example always makes the same `p10k segment` calls, we can call it from
-    # instant_prompt_example. This will give us the same `example` prompt segment in the instant
-    # and regular prompts.
-    prompt_example
+  function instant_prompt_ssh_indicator() {
+    prompt_ssh_indicator
   }
+  typeset -g POWERLEVEL9K_SSH_INDICATOR_FOREGROUND=255
+  typeset -g POWERLEVEL9K_SSH_INDICATOR_BACKGROUND=1
 
-  # User-defined prompt segments can be customized the same way as built-in segments.
-  typeset -g POWERLEVEL9K_EXAMPLE_FOREGROUND=3
-  typeset -g POWERLEVEL9K_EXAMPLE_BACKGROUND=1
-  # typeset -g POWERLEVEL9K_EXAMPLE_VISUAL_IDENTIFIER_EXPANSION='⭐'
+  # Override dir segment colors when in SSH: orange background instead of blue.
+  if [[ -n "$SSH_CONNECTION" ]]; then
+    typeset -g POWERLEVEL9K_DIR_BACKGROUND=208
+    typeset -g POWERLEVEL9K_DIR_FOREGROUND=0
+    typeset -g POWERLEVEL9K_DIR_SHORTENED_FOREGROUND=238
+    typeset -g POWERLEVEL9K_DIR_ANCHOR_FOREGROUND=0
+  fi
 
   # Transient prompt works similarly to the builtin transient_rprompt option. It trims down prompt
   # when accepting a command line. Supported values:
