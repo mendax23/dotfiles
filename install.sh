@@ -70,7 +70,7 @@ backup_dotfiles() {
 info "Installing system packages..."
 sudo apt update
 sudo apt install -y \
-    zsh tmux kitty vim fzf stow curl git \
+    zsh tmux kitty vim fzf stow curl git unzip \
     thefuck wl-clipboard xclip
 
 ok "System packages installed"
