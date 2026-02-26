@@ -1774,13 +1774,13 @@
   ##################################[ ssh_indicator: SSH badge ]##################################
   # Custom segment: shows a bold  SSH badge only when connected via SSH.
   function prompt_ssh_indicator() {
-    [[ -n "$SSH_CONNECTION" ]] && p10k segment -b 1 -f 255 -i '󰣀' -t 'SSH'
+    [[ -n "$SSH_CONNECTION" ]] && p10k segment -b 240 -f 255 -i '󰣀' -t 'SSH'
   }
   function instant_prompt_ssh_indicator() {
     prompt_ssh_indicator
   }
   typeset -g POWERLEVEL9K_SSH_INDICATOR_FOREGROUND=255
-  typeset -g POWERLEVEL9K_SSH_INDICATOR_BACKGROUND=1
+  typeset -g POWERLEVEL9K_SSH_INDICATOR_BACKGROUND=240
 
   # Override dir segment colors when in SSH: orange background instead of blue.
   if [[ -n "$SSH_CONNECTION" ]]; then
