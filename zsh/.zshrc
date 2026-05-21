@@ -151,4 +151,4 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # OpenClaw Completion
-source <(openclaw completion --shell zsh)
+source "/home/bayram/.openclaw/completions/openclaw.zsh"
