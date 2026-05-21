@@ -152,3 +152,5 @@ export NVM_DIR="$HOME/.nvm"
 
 # OpenClaw Completion
 source "/home/bayram/.openclaw/completions/openclaw.zsh"
+
+cd ~/Documents
