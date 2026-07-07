@@ -113,6 +113,9 @@ if [[ -r /usr/share/doc/fzf/examples/completion.zsh ]]; then
   source /usr/share/doc/fzf/examples/completion.zsh
 fi
 
+# Strg+T (fzf Datei-Suche) deaktivieren – nervt. Strg+R (History) und Alt+C bleiben.
+bindkey -r '^T'
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
