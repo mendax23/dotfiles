@@ -156,4 +156,14 @@ export NVM_DIR="$HOME/.nvm"
 # OpenClaw Completion
 source "/home/bayram/.openclaw/completions/openclaw.zsh"
 
+# Bricht eine SSH-Verbindung weg, bleibt das Mouse-Tracking der Gegenseite aktiv:
+# das Terminal schickt weiter ESC[<35;x;y M pro Mausbewegung, zsh druckt den Rest
+# und piept bei jedem ungematchten Prefix. Nach jedem ssh alles zurücksetzen.
+ssh() {
+  command ssh "$@"
+  local ret=$?
+  [[ -t 1 ]] && printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l\e[?2004l\e[?25h'
+  return $ret
+}
+
 cd ~/Documents
