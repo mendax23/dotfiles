@@ -166,4 +166,23 @@ ssh() {
   return $ret
 }
 
+# Remote-Claude-Sessions: verbindet per mosh und haengt an eine benannte
+# tmux-Session auf dem SERVER an. Die laeuft dort weiter, wenn das WLAN wegbricht
+# -- mosh holt die Verbindung zurueck, tmux hat die Prozesse festgehalten.
+# Nutzung: cc <session> [host]   z.B.  cc mpu-crm
+# Default-Host kommt aus $CC_HOST (privat in ~/.zshrc.local setzen).
+cc() {
+  local session="${1:?Nutzung: cc <session> [host]}"
+  local host="${2:-$CC_HOST}"
+  if [[ -z "$host" ]]; then
+    print -u2 "cc: kein Host gesetzt. CC_HOST in ~/.zshrc.local eintragen oder: cc <session> <host>"
+    return 1
+  fi
+  command -v mosh >/dev/null || { print -u2 "cc: mosh ist nicht installiert"; return 1 }
+  mosh "$host" -- tmux new-session -A -s "$session"
+}
+
+# Maschinen-spezifisches und Privates (Hosts, Tokens) - bewusst nicht in git
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
 cd ~/Documents

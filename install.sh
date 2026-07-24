@@ -71,7 +71,7 @@ info "Installing system packages..."
 sudo apt update
 sudo apt install -y \
     zsh tmux kitty vim fzf stow curl git unzip fontconfig \
-    thefuck wl-clipboard xclip
+    thefuck wl-clipboard xclip mosh
 
 ok "System packages installed"
 
