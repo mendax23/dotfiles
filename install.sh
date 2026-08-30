@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+# Bei "sh install.sh" laeuft dash und stolpert ueber die Array-Syntax weiter
+# unten. Deshalb hier POSIX-konform pruefen und mit bash neu starten.
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
+
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
