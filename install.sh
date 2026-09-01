@@ -8,8 +8,16 @@ fi
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
-STOW_PACKAGES=(zsh bash git tmux kitty vscode misc)
 MODE="default"
+PROFILE="auto"
+
+# Alles was auch headless Sinn ergibt
+BASE_PACKAGES=(zsh tmux vim fzf stow curl git unzip thefuck wl-clipboard xclip mosh)
+BASE_STOW=(zsh bash git tmux misc)
+
+# Nur auf einem Desktop sinnvoll: Terminal-Emulator, Fonts, VS Code
+GUI_PACKAGES=(kitty fontconfig)
+GUI_STOW=(kitty vscode)
 
 info()  { printf "\033[1;34m[INFO]\033[0m  %s\n" "$1"; }
 ok()    { printf "\033[1;32m[OK]\033[0m    %s\n" "$1"; }
@@ -17,11 +25,15 @@ warn()  { printf "\033[1;33m[WARN]\033[0m  %s\n" "$1"; }
 error() { printf "\033[1;31m[ERROR]\033[0m %s\n" "$1"; }
 
 usage() {
-    echo "Usage: $0 [--backup | --overwrite]"
+    echo "Usage: $0 [--backup | --overwrite] [--server | --desktop]"
     echo ""
     echo "  (default)     Fail if existing dotfiles conflict with stow"
     echo "  --backup      Back up existing dotfiles before symlinking"
     echo "  --overwrite   Overwrite existing dotfiles with these configs"
+    echo ""
+    echo "  --server      Skip kitty, fonts and VS Code (headless machines)"
+    echo "  --desktop     Force the full desktop install"
+    echo "                Without either flag the profile is auto-detected."
     exit 1
 }
 
@@ -30,10 +42,41 @@ for arg in "$@"; do
     case "$arg" in
         --backup)    MODE="backup" ;;
         --overwrite) MODE="overwrite" ;;
+        --server)    PROFILE="server" ;;
+        --desktop)   PROFILE="desktop" ;;
         -h|--help)   usage ;;
         *)           error "Unknown option: $arg"; usage ;;
     esac
 done
+
+# ---------- desktop oder server? ----------
+# Absichtlich an den installierten Session-Verzeichnissen festgemacht und nicht
+# an $DISPLAY: per "ssh -X" auf eine Droplet waere $DISPLAY gesetzt, obwohl die
+# Maschine headless ist.
+if [ "$PROFILE" = "auto" ]; then
+    if [ -d /usr/share/xsessions ] || [ -d /usr/share/wayland-sessions ]; then
+        PROFILE="desktop"
+    else
+        PROFILE="server"
+    fi
+fi
+
+APT_PACKAGES=("${BASE_PACKAGES[@]}")
+STOW_PACKAGES=("${BASE_STOW[@]}")
+if [ "$PROFILE" = "desktop" ]; then
+    APT_PACKAGES+=("${GUI_PACKAGES[@]}")
+    STOW_PACKAGES+=("${GUI_STOW[@]}")
+fi
+
+# ---------- sudo nur wenn noetig und vorhanden ----------
+if [ "$(id -u)" -eq 0 ]; then
+    SUDO=""
+elif command -v sudo >/dev/null 2>&1; then
+    SUDO="sudo"
+else
+    error "Neither running as root nor is sudo available"
+    exit 1
+fi
 
 # ---------- find conflicting files ----------
 find_conflicts() {
@@ -73,11 +116,16 @@ backup_dotfiles() {
 }
 
 # ---------- system packages ----------
-info "Installing system packages..."
-sudo apt update
-sudo apt install -y \
-    zsh tmux kitty vim fzf stow curl git unzip fontconfig \
-    thefuck wl-clipboard xclip mosh
+info "Installing system packages ($PROFILE profile)..."
+
+# Ein kaputtes Fremd-Repo (abgelaufene PPA, fehlender Key) laesst apt update mit
+# Exit-Code 100 zurueckkommen. Das darf die Installation nicht abbrechen, die
+# Paketlisten der funktionierenden Repos sind trotzdem aktuell.
+if ! $SUDO apt update; then
+    warn "apt update reported errors (broken third-party repo?), continuing"
+fi
+
+$SUDO apt install -y "${APT_PACKAGES[@]}"
 
 ok "System packages installed"
 
@@ -138,49 +186,54 @@ else
     ok "TPM already installed"
 fi
 
-# ---------- FiraCode Nerd Font ----------
-FONT_DIR="$HOME/.local/share/fonts"
-if ! fc-list | grep -qi "FiraCode Nerd Font"; then
-    info "Installing FiraCode Nerd Font..."
-    mkdir -p "$FONT_DIR"
-    curl -fLo /tmp/FiraCode.zip \
-        https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
-    unzip -o /tmp/FiraCode.zip -d "$FONT_DIR/FiraCode"
-    fc-cache -fv
-    rm /tmp/FiraCode.zip
-    ok "FiraCode Nerd Font installed"
+# ---------- desktop-only: Fonts, VS Code ----------
+if [ "$PROFILE" = "desktop" ]; then
+    # ---------- FiraCode Nerd Font ----------
+    FONT_DIR="$HOME/.local/share/fonts"
+    if ! fc-list | grep -qi "FiraCode Nerd Font"; then
+        info "Installing FiraCode Nerd Font..."
+        mkdir -p "$FONT_DIR"
+        curl -fLo /tmp/FiraCode.zip \
+            https://github.com/ryanoasis/nerd-fonts/releases/latest/download/FiraCode.zip
+        unzip -o /tmp/FiraCode.zip -d "$FONT_DIR/FiraCode"
+        fc-cache -fv
+        rm /tmp/FiraCode.zip
+        ok "FiraCode Nerd Font installed"
+    else
+        ok "FiraCode Nerd Font already installed"
+    fi
+
+    # ---------- VS Code ----------
+    if ! command -v code &>/dev/null; then
+        info "Installing VS Code..."
+        curl -fLo /tmp/vscode.deb \
+            "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
+        $SUDO dpkg -i /tmp/vscode.deb || $SUDO apt install -f -y
+        rm /tmp/vscode.deb
+        ok "VS Code installed"
+    else
+        ok "VS Code already installed"
+    fi
+
+    # ---------- VS Code extensions ----------
+    VSCODE_EXTENSIONS=(
+        ms-python.debugpy
+        ms-python.python
+        ms-python.vscode-pylance
+        ms-python.vscode-python-envs
+        ms-vscode-remote.remote-ssh
+        ms-vscode-remote.remote-ssh-edit
+        ms-vscode.remote-explorer
+    )
+
+    info "Installing VS Code extensions..."
+    for ext in "${VSCODE_EXTENSIONS[@]}"; do
+        code --install-extension "$ext" --force 2>/dev/null || warn "Failed to install $ext"
+    done
+    ok "VS Code extensions done"
 else
-    ok "FiraCode Nerd Font already installed"
+    info "Server profile: skipping fonts, VS Code and its extensions"
 fi
-
-# ---------- VS Code ----------
-if ! command -v code &>/dev/null; then
-    info "Installing VS Code..."
-    curl -fLo /tmp/vscode.deb \
-        "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64"
-    sudo dpkg -i /tmp/vscode.deb || sudo apt install -f -y
-    rm /tmp/vscode.deb
-    ok "VS Code installed"
-else
-    ok "VS Code already installed"
-fi
-
-# ---------- VS Code extensions ----------
-VSCODE_EXTENSIONS=(
-    ms-python.debugpy
-    ms-python.python
-    ms-python.vscode-pylance
-    ms-python.vscode-python-envs
-    ms-vscode-remote.remote-ssh
-    ms-vscode-remote.remote-ssh-edit
-    ms-vscode.remote-explorer
-)
-
-info "Installing VS Code extensions..."
-for ext in "${VSCODE_EXTENSIONS[@]}"; do
-    code --install-extension "$ext" --force 2>/dev/null || warn "Failed to install $ext"
-done
-ok "VS Code extensions done"
 
 # ---------- symlink dotfiles with stow ----------
 cd "$DOTFILES_DIR"

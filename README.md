@@ -21,6 +21,19 @@ if you already have a `.zshrc`, `.bashrc`, etc., the default install will stop a
 ./install.sh --overwrite  # replaces existing files with these configs (no backup)
 ```
 
+### on a server
+
+the script detects headless machines (no `/usr/share/xsessions` or
+`/usr/share/wayland-sessions`) and then skips kitty, the nerd font, vs code and its
+extensions — the kitty and vscode stow packages are left out too. force it either way:
+
+```bash
+./install.sh --server     # never install the desktop stuff
+./install.sh --desktop    # full install even if detection says otherwise
+```
+
+sudo is only used when you are not already root, so it also works on a bare root shell.
+
 ## what's included
 
 | package | files |
@@ -56,6 +69,6 @@ now it's symlinked and tracked.
 - zsh, oh-my-zsh, powerlevel10k
 - zsh-autosuggestions, zsh-syntax-highlighting, history-substring-search
 - tmux, tpm, dracula theme
-- kitty, FiraCode Nerd Font
+- kitty, FiraCode Nerd Font (desktop only)
 - nvm, fzf, thefuck, vim
-- vscode + extensions
+- vscode + extensions (desktop only)
