@@ -182,6 +182,40 @@ cc() {
   mosh "$host" -- tmux new-session -A -s "$session"
 }
 
+# Haptische Rückmeldung der MX Master 4 für lange Befehle: läuft etwas länger
+# als MX_HAPTIC_MIN_SECONDS, meldet sich die Maus beim Fertigwerden -- freundlich
+# bei Erfolg, unfreundlich bei Fehler. So merkt man ohne hinzuschauen, ob der
+# Build durch ist. Ohne die Maus passiert einfach nichts.
+MX_HAPTIC_MIN_SECONDS=${MX_HAPTIC_MIN_SECONDS:-30}
+MX_HAPTIC_BIN=${MX_HAPTIC_BIN:-$HOME/.local/bin/mx-haptic}
+# Interaktives behält man ohnehin im Blick, da wäre die Vibration nur lästig
+MX_HAPTIC_IGNORE=(vim nvim nano less more man ssh mosh cc tmux claude top htop btop watch ranger fzf)
+
+_mx_haptic_preexec() {
+  _mx_haptic_start=$SECONDS
+  _mx_haptic_cmd=${${(z)1}[1]}
+}
+
+_mx_haptic_precmd() {
+  local ret=$?
+  [[ -n ${_mx_haptic_start:-} ]] || return
+  local elapsed=$(( SECONDS - _mx_haptic_start ))
+  local cmd=$_mx_haptic_cmd
+  unset _mx_haptic_start _mx_haptic_cmd
+  (( elapsed < MX_HAPTIC_MIN_SECONDS )) && return
+  (( ${MX_HAPTIC_IGNORE[(Ie)$cmd]} )) && return
+  [[ -x $MX_HAPTIC_BIN ]] || return
+  if (( ret == 0 )); then
+    $MX_HAPTIC_BIN HAPPY_ALERT &>/dev/null &!
+  else
+    $MX_HAPTIC_BIN ANGRY_ALERT &>/dev/null &!
+  fi
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec _mx_haptic_preexec
+add-zsh-hook precmd _mx_haptic_precmd
+
 # Maschinen-spezifisches und Privates (Hosts, Tokens) - bewusst nicht in git
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
 
