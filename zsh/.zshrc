@@ -167,8 +167,8 @@ ssh() {
 }
 
 # Remote-Claude-Sessions: verbindet per mosh und haengt an eine benannte
-# tmux-Session auf dem SERVER an. Die laeuft dort weiter, wenn das WLAN wegbricht
-# -- mosh holt die Verbindung zurueck, tmux hat die Prozesse festgehalten.
+# tmux-Session auf dem SERVER an. Die läuft dort weiter, wenn das WLAN wegbricht
+# -- mosh holt die Verbindung zurück, tmux hat die Prozesse festgehalten.
 # Nutzung: cc <session> [host]   z.B.  cc mpu-crm
 # Default-Host kommt aus $CC_HOST (privat in ~/.zshrc.local setzen).
 cc() {
