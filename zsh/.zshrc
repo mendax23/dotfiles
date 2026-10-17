@@ -166,6 +166,16 @@ ssh() {
   return $ret
 }
 
+# Der kitty-Tab trägt den Session-Namen, damit man bei einem Dutzend Tabs noch
+# weiß, welcher wohin verbunden ist. Klappt nur direkt in kitty: in einem lokalen
+# tmux ist KITTY_WINDOW_ID zwar vererbt, der Kontrollkanal aber nicht erreichbar.
+# Der Titel ist reine Kosmetik, Fehler werden deshalb geschluckt.
+_cc_kitty_tab_title() {
+  [[ -n ${KITTY_WINDOW_ID:-} && -z ${TMUX:-} ]] || return 0
+  command -v kitty >/dev/null || return 0
+  kitty @ set-tab-title "$1" 2>/dev/null
+}
+
 # Remote-Claude-Sessions: verbindet per mosh und haengt an eine benannte
 # tmux-Session auf dem SERVER an. Die läuft dort weiter, wenn das WLAN wegbricht
 # -- mosh holt die Verbindung zurück, tmux hat die Prozesse festgehalten.
@@ -179,6 +189,7 @@ cc() {
     return 1
   fi
   command -v mosh >/dev/null || { print -u2 "cc: mosh ist nicht installiert"; return 1 }
+  _cc_kitty_tab_title "$session"
   mosh "$host" -- tmux new-session -A -s "$session"
 }
 
